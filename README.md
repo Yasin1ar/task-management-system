@@ -9,7 +9,7 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Set up GitHub repository with proper README
 - [x] leverage gitflow
 - [x] Initialize NestJS project
-- [ ] Include environment configuration management
+- [x] Include environment configuration management
 - [ ] Set up Docker for MySQL 8.0
 - [ ] Configure Prisma ORM
 - [ ] Set up Swagger for documentation
