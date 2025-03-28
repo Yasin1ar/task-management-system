@@ -1,4 +1,5 @@
 .qodo
+project-statement.md
 # compiled output
 /dist
 /node_modules

@@ -16,11 +16,11 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] install and configure ESLint + Prettier
 - [x] install husky for pre-commit hook
 - [x] Set up testing environment (Jest)
-- [ ] final check before the next phase
+- [x] final check before the next phase
 
 ### 2. Database Design (phase 2)
 
-- [ ] Design database schema (Users, Tasks, Roles)
+- [x] Design database schema (Users, Tasks)
 - [ ] Create Prisma models
 - [ ] Set up migrations
 - [ ] Test database connections
