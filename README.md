@@ -21,10 +21,10 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 ### 2. Database Design (phase 2)
 
 - [x] Design database schema (Users, Tasks)
-- [ ] Create Prisma models
-- [ ] Set up migrations
-- [ ] Test database connections
-- [ ] final check before the next phase
+- [x] Create Prisma models
+- [x] Set up migrations
+- [x] Test database connections
+- [x] final check before the next phase
 
 ### 3. Authentication Module (phase 3)
 
