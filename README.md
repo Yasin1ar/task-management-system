@@ -14,7 +14,7 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Basic Prisma ORM configuration
 - [x] Set up Swagger for documentation
 - [x] install and configure ESLint + Prettier
-- [ ] install husky for pre-commit hook
+- [x] install husky for pre-commit hook
 - [ ] Set up testing environment (Jest)
 - [ ] final check before the next phase
 
