@@ -13,7 +13,7 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Set up Docker for MySQL 8.0
 - [x] Basic Prisma ORM configuration
 - [x] Set up Swagger for documentation
-- [ ] install and configure ESLint + Prettier
+- [x] install and configure ESLint + Prettier
 - [ ] install husky for pre-commit hook
 - [ ] Set up testing environment (Jest)
 - [ ] final check before the next phase
