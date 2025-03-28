@@ -11,9 +11,8 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Initialize NestJS project
 - [x] Include environment configuration management
 - [x] Set up Docker for MySQL 8.0
-- [ ] Configure Prisma ORM
-- [ ] Set up Swagger for documentation
-- [ ] Create initial project structure following NestJS best practices
+- [x] Basic Prisma ORM configuration
+- [x] Set up Swagger for documentation
 - [ ] install and configure ESLint + Prettier
 - [ ] install husky for pre-commit hook
 - [ ] Set up testing environment (Jest)
