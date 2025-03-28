@@ -15,7 +15,7 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Set up Swagger for documentation
 - [x] install and configure ESLint + Prettier
 - [x] install husky for pre-commit hook
-- [ ] Set up testing environment (Jest)
+- [x] Set up testing environment (Jest)
 - [ ] final check before the next phase
 
 ### 2. Database Design (phase 2)
