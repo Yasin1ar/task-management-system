@@ -45,7 +45,7 @@ describe('AuthService - Login', () => {
 
     // Mock bcrypt.compare to return true only for 'correctPassword'
     jest.spyOn(bcrypt, 'compare').mockImplementation((password) => {
-      return await Promise.resolve(password === 'correctPassword');
+      return Promise.resolve(password === 'correctPassword');
     });
   });
 
