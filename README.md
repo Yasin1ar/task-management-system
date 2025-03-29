@@ -28,9 +28,9 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 
 ### 3. Authentication Module (phase 3)
 
-- [ ] Implement user registration with validation
-- [ ] Implement login functionality
-- [ ] Set up JWT authentication
+- [x] Implement user registration with validation
+- [x] Implement login functionality
+- [x] Set up JWT authentication
 - [ ] Create role-based authorization
 - [ ] Write tests for authentication flows
 - [ ] final check before the next phase
