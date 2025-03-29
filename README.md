@@ -31,9 +31,9 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Implement user registration with validation
 - [x] Implement login functionality
 - [x] Set up JWT authentication
-- [ ] Create role-based authorization
-- [ ] Write tests for authentication flows
-- [ ] final check before the next phase
+- [x] Create role-based authorization
+- [x] Write tests for authentication flows
+- [x] final check before the next phase
 
 ### 4. User Management Module (phase 4)
 
