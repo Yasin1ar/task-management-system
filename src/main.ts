@@ -1,9 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
+  // Load environment variables
+  dotenv.config();
+  
+  // Validate required environment variables
+  const requiredEnvVars = ['JWT_SECRET'];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`Environment variable ${envVar} is required`);
+    }
+  }
+
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // Apply validation pipe globally
@@ -26,6 +39,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  await app.listen(process.env.PORT ?? 3000);
+  
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  logger.log(`Application listening on port ${port}`);
 }
 bootstrap();
