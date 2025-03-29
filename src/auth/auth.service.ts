@@ -32,7 +32,21 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
+    // Check if registerDto is defined
+    if (!registerDto) {
+      throw new BadRequestException('Request body is required');
+    }
+
     const { email, phoneNumber, username, password } = registerDto;
+
+    // Validate required fields
+    if (!username) {
+      throw new BadRequestException('Username is required');
+    }
+
+    if (!password) {
+      throw new BadRequestException('Password is required');
+    }
 
     // Validate that at least one of email or phoneNumber is provided
     if (!email && !phoneNumber) {
@@ -84,7 +98,21 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    // Check if loginDto is defined
+    if (!loginDto) {
+      throw new BadRequestException('Request body is required');
+    }
+
     const { username, password } = loginDto;
+
+    // Validate required fields
+    if (!username) {
+      throw new BadRequestException('Username is required');
+    }
+
+    if (!password) {
+      throw new BadRequestException('Password is required');
+    }
 
     // Find user by username
     const user = await this.prisma.user.findUnique({
