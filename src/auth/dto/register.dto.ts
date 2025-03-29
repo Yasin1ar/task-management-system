@@ -1,5 +1,25 @@
+/**
+ * User Registration Data Transfer Object
+ *
+ * This DTO validates user registration data with the following rules:
+ * - Either email or phone number must be provided (validated in service)
+ * - Email must be a valid format
+ * - Phone number must match the pattern +?[0-9]{10,15}
+ * - Username must be at least 3 characters long
+ * - Password must be at least 8 characters and contain both uppercase and lowercase letters
+ * - First name and last name are optional
+ *
+ * The class uses class-validator decorators for validation and
+ * Swagger decorators for API documentation.
+ */
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({ required: false, description: 'User email address' })
@@ -9,7 +29,9 @@ export class RegisterDto {
 
   @ApiProperty({ required: false, description: 'User phone number' })
   @IsString()
-  @Matches(/^\+?[0-9]{10,15}$/, { message: 'Please provide a valid phone number' })
+  @Matches(/^\+?[0-9]{10,15}$/, {
+    message: 'Please provide a valid phone number',
+  })
   @IsOptional()
   phoneNumber?: string;
 
@@ -22,7 +44,8 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])/, {
-    message: 'Password must contain at least one uppercase and one lowercase letter',
+    message:
+      'Password must contain at least one uppercase and one lowercase letter',
   })
   password: string;
 
