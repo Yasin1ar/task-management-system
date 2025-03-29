@@ -1,23 +1,28 @@
-/**
- * Authentication Service
- * 
- * Handles user authentication operations including:
- * - User registration with validation
- * - User login and credential verification
- * - Password hashing using bcrypt
- * - JWT token generation for authenticated users
- * 
- * The service ensures that users provide either an email or phone number,
- * validates that usernames, emails, and phone numbers are unique,
- * and securely stores user passwords using bcrypt hashing.
- */
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+
+/**
+ * Authentication Service
+ *
+ * Handles user authentication operations including:
+ * - User registration with validation
+ * - User login and credential verification
+ * - Password hashing using bcrypt
+ * - JWT token generation for authenticated users
+ *
+ * The service ensures that users provide either an email or phone number,
+ * validates that usernames, emails, and phone numbers are unique,
+ * and securely stores user passwords using bcrypt hashing.
+ */
 
 @Injectable()
 export class AuthService {
@@ -31,7 +36,9 @@ export class AuthService {
 
     // Validate that at least one of email or phoneNumber is provided
     if (!email && !phoneNumber) {
-      throw new BadRequestException('Either email or phone number must be provided');
+      throw new BadRequestException(
+        'Either email or phone number must be provided',
+      );
     }
 
     // Check for existing user with the same email, phone number, or username
@@ -100,7 +107,7 @@ export class AuthService {
 
   /**
    * Builds a standardized user response object
-   * 
+   *
    * @param user The user entity from the database
    * @returns An object containing user data (without password) and JWT token
    */
@@ -108,10 +115,12 @@ export class AuthService {
     // Generate JWT token
     const token = this.generateToken(user);
 
-    // Return user data (excluding password) and token
-    const { password: _, ...result } = user;
+    // Use object destructuring to exclude the password
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
+
     return {
-      user: result,
+      user: userWithoutPassword,
       token,
     };
   }
