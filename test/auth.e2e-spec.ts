@@ -8,6 +8,9 @@
  * - Protected route access
  * - Role-based authorization
  */
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
