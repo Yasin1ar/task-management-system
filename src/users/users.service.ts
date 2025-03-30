@@ -19,7 +19,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import * as bcrypt from 'bcrypt';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User, UserRole } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -228,6 +228,36 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: updateData,
+    });
+
+    // Remove password from the returned user object
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword;
+  }
+
+  /**
+   * Update a user's role
+   */
+  async updateRole(id: number, role: UserRole): Promise<Omit<User, 'password'>> {
+    // Check if user exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Validate role
+    if (!Object.values(UserRole).includes(role)) {
+      throw new BadRequestException('Invalid role. Must be Admin or User');
+    }
+
+    // Update the user's role
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: { role },
     });
 
     // Remove password from the returned user object
