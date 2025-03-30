@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
+/**
+ * Application Service
+ *
+ * Provides general information about the API.
+ */
 @Injectable()
 export class AppService {
+  /**
+   * Returns basic information about the API
+   */
   getApiInfo() {
     return {
       name: 'Task Management API',
