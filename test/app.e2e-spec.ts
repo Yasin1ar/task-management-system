@@ -52,6 +52,6 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/docs')
       .expect(302)
-      .expect('Location', '/api/docs');
+      .expect('Location', 'api/docs');
   });
 });
