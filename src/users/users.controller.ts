@@ -15,6 +15,8 @@ import {
   UseGuards,
   Query,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -91,12 +93,27 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user by ID (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 204, description: 'User deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - requires Admin role' })
   @ApiResponse({ status: 404, description: 'User not found' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
+  }
+
+  @Patch(':id/role')
+  @ApiOperation({ summary: 'Update user role (Admin only)' })
+  @ApiResponse({ status: 200, description: 'The role has been updated' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires Admin role' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('role') role: UserRole,
+  ) {
+    return this.usersService.updateRole(id, role);
   }
 }
