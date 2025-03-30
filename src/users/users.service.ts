@@ -164,22 +164,26 @@ export class UsersService {
     }
 
     // Check for duplicate email, phone number, or username
-    if (updateUserDto.email || updateUserDto.phoneNumber || updateUserDto.username) {
+    if (
+      updateUserDto.email ||
+      updateUserDto.phoneNumber ||
+      updateUserDto.username
+    ) {
       // Build the OR conditions for the query
       const orConditions: Prisma.UserWhereInput[] = [];
-      
+
       if (updateUserDto.email) {
         orConditions.push({ email: updateUserDto.email });
       }
-      
+
       if (updateUserDto.phoneNumber) {
         orConditions.push({ phoneNumber: updateUserDto.phoneNumber });
       }
-      
+
       if (updateUserDto.username) {
         orConditions.push({ username: updateUserDto.username });
       }
-      
+
       if (orConditions.length > 0) {
         const duplicateUser = await this.prisma.user.findFirst({
           where: {
@@ -189,13 +193,23 @@ export class UsersService {
         });
 
         if (duplicateUser) {
-          if (duplicateUser.email === updateUserDto.email) {
+          // Check which field caused the duplicate
+          if (
+            updateUserDto.email &&
+            duplicateUser.email === updateUserDto.email
+          ) {
             throw new BadRequestException('Email already in use');
           }
-          if (duplicateUser.phoneNumber === updateUserDto.phoneNumber) {
+          if (
+            updateUserDto.phoneNumber &&
+            duplicateUser.phoneNumber === updateUserDto.phoneNumber
+          ) {
             throw new BadRequestException('Phone number already in use');
           }
-          if (duplicateUser.username === updateUserDto.username) {
+          if (
+            updateUserDto.username &&
+            duplicateUser.username === updateUserDto.username
+          ) {
             throw new BadRequestException('Username already in use');
           }
         }
