@@ -29,6 +29,12 @@ export class UpdateUserDto {
   @IsOptional()
   phoneNumber?: string;
 
+  @ApiProperty({ required: false, description: 'Username for login' })
+  @IsString()
+  @MinLength(3, { message: 'Username must be at least 3 characters long' })
+  @IsOptional()
+  username?: string;
+
   @ApiProperty({ required: false, description: 'User password' })
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
