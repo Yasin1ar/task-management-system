@@ -4,6 +4,7 @@
  * This file contains interfaces used across the authentication module.
  */
 import { User, UserRole } from '@prisma/client';
+import { Request } from 'express';
 
 /**
  * Represents an authenticated user without the password field
