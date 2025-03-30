@@ -1,6 +1,6 @@
 /**
  * Application E2E Tests
- * 
+ *
  * This test suite validates the basic functionality of the application:
  * - Application startup
  * - Root endpoint response
@@ -20,7 +20,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // Apply the same pipes and configuration as in the main.ts file
     app.useGlobalPipes(
       new ValidationPipe({
@@ -29,7 +29,7 @@ describe('AppController (e2e)', () => {
         transform: true,
       }),
     );
-    
+
     await app.init();
   });
 
@@ -52,6 +52,6 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/docs')
       .expect(302)
-      .expect('Location', '/api');
+      .expect('Location', '/api/docs');
   });
 });
