@@ -19,7 +19,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -163,26 +163,41 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Check for duplicate email or phone number
-    if (updateUserDto.email || updateUserDto.phoneNumber) {
-      const duplicateUser = await this.prisma.user.findFirst({
-        where: {
-          OR: [
-            updateUserDto.email ? { email: updateUserDto.email } : {},
-            updateUserDto.phoneNumber
-              ? { phoneNumber: updateUserDto.phoneNumber }
-              : {},
-          ],
-          NOT: { id },
-        },
-      });
+    // Check for duplicate email, phone number, or username
+    if (updateUserDto.email || updateUserDto.phoneNumber || updateUserDto.username) {
+      // Build the OR conditions for the query
+      const orConditions: Prisma.UserWhereInput[] = [];
+      
+      if (updateUserDto.email) {
+        orConditions.push({ email: updateUserDto.email });
+      }
+      
+      if (updateUserDto.phoneNumber) {
+        orConditions.push({ phoneNumber: updateUserDto.phoneNumber });
+      }
+      
+      if (updateUserDto.username) {
+        orConditions.push({ username: updateUserDto.username });
+      }
+      
+      if (orConditions.length > 0) {
+        const duplicateUser = await this.prisma.user.findFirst({
+          where: {
+            OR: orConditions,
+            NOT: { id },
+          },
+        });
 
-      if (duplicateUser) {
-        if (duplicateUser.email === updateUserDto.email) {
-          throw new BadRequestException('Email already in use');
-        }
-        if (duplicateUser.phoneNumber === updateUserDto.phoneNumber) {
-          throw new BadRequestException('Phone number already in use');
+        if (duplicateUser) {
+          if (duplicateUser.email === updateUserDto.email) {
+            throw new BadRequestException('Email already in use');
+          }
+          if (duplicateUser.phoneNumber === updateUserDto.phoneNumber) {
+            throw new BadRequestException('Phone number already in use');
+          }
+          if (duplicateUser.username === updateUserDto.username) {
+            throw new BadRequestException('Username already in use');
+          }
         }
       }
     }
