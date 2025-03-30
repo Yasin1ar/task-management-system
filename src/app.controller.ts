@@ -1,6 +1,9 @@
-import { Controller, Get, Redirect } from '@nestjs/common';
+import { Controller, Get, UseGuards, Redirect } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CurrentUser } from './auth/decorators/current-user.decorator';
+import { AuthenticatedUser } from './auth/interfaces/auth.interfaces';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('app')
 @Controller()
@@ -18,5 +21,20 @@ export class AppController {
   @ApiOperation({ summary: 'Redirect to API documentation' })
   getDocs() {
     return;
+  }
+
+  @Get('protected')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Protected route example' })
+  getProtected(@CurrentUser() user: AuthenticatedUser) {
+    return {
+      message: 'This is a protected route',
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role
+      }
+    };
   }
 }
