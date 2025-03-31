@@ -1,12 +1,6 @@
-/**
- * E2E Test Setup
- *
- * This file handles the setup and teardown of the test database for E2E tests.
- * It ensures each test runs with a clean database state.
- */
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { execSync } from 'child_process';
 
@@ -25,11 +19,11 @@ const prisma = new PrismaClient({
 export async function setupTestDatabase() {
   try {
     console.log('Setting up test database...');
-    
+
     // Push the schema to the test database
     try {
       console.log('Pushing Prisma schema to test database...');
-      execSync('npx prisma db push', { 
+      execSync('npx prisma db push', {
         env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL },
         stdio: 'inherit'
       });
@@ -37,12 +31,21 @@ export async function setupTestDatabase() {
     } catch (error) {
       console.error('Error pushing schema:', error);
     }
-    
-    // Reset the database to a clean state
-    await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 0;');
-    await prisma.$executeRawUnsafe('TRUNCATE TABLE users;');
-    await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1;');
-    
+
+    // Reset the database to a clean state - IMPORTANT: truncate tables in the correct order
+    // to avoid foreign key constraint errors
+    await prisma.$transaction([
+      // Disable foreign key checks
+      prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 0;'),
+      
+      // Truncate tables in the correct order (child tables first)
+      prisma.$executeRawUnsafe('TRUNCATE TABLE tasks;'),
+      prisma.$executeRawUnsafe('TRUNCATE TABLE users;'),
+      
+      // Re-enable foreign key checks
+      prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1;'),
+    ]);
+
     console.log('Test database reset completed');
   } catch (error) {
     console.error('Error setting up test database:', error);
@@ -69,7 +72,23 @@ export async function createTestAdmin() {
       username: 'testadmin',
       email: 'admin@test.com',
       password: hashedPassword,
-      role: 'Admin',
+      role: UserRole.Admin,
+    },
+  });
+}
+
+/**
+ * Create a test regular user
+ */
+export async function createTestUser() {
+  const hashedPassword = await bcrypt.hash('UserPassword123', 10);
+  
+  return prisma.user.create({
+    data: {
+      username: 'testuser',
+      email: 'user@test.com',
+      password: hashedPassword,
+      role: UserRole.User,
     },
   });
 }

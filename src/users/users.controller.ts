@@ -104,6 +104,7 @@ export class UsersController {
   }
 
   @Patch(':id/role')
+  @Roles(UserRole.Admin) 
   @ApiOperation({ summary: 'Update user role (Admin only)' })
   @ApiResponse({ status: 200, description: 'The role has been updated' })
   @ApiResponse({ status: 400, description: 'Bad request' })
