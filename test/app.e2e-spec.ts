@@ -1,57 +1,89 @@
-/**
- * Application E2E Tests
- *
- * This test suite validates the basic functionality of the application:
- * - Application startup
- * - Root endpoint response
- * - API information endpoint
- */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import { TestSetup } from './test-setup';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { UserRole } from '@prisma/client';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication;
+describe('App Module (e2e)', () => {
+  const testSetup = new TestSetup();
+  let jwtService: JwtService;
+  let userToken: string;
+  let userId: number;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+  beforeAll(async () => {
+    await testSetup.initialize();
+    jwtService = testSetup.app.get<JwtService>(JwtService);
 
-    app = moduleFixture.createNestApplication();
+    // Create a test user
+    const hashedPassword = await bcrypt.hash('Password123', 10);
+    const user = await testSetup.prismaService.user.create({
+      data: {
+        username: 'appuser',
+        email: 'app@example.com',
+        password: hashedPassword,
+        role: UserRole.User,
+      },
+    });
+    userId = user.id;
 
-    // Apply the same pipes and configuration as in the main.ts file
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
+    // Generate a token for the test user
+    userToken = jwtService.sign({
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    });
+  }, 60000); // 60 second timeout
 
-    await app.init();
+  afterAll(async () => {
+    await testSetup.cleanup();
+  }, 30000); // 30 second timeout
+
+  describe('GET /', () => {
+    it('should return API information', async () => {
+      const response = await testSetup.request()
+        .get('/')
+        .expect(200);
+
+      expect(response.body).toHaveProperty('name');
+      expect(response.body).toHaveProperty('version');
+      expect(response.body).toHaveProperty('description');
+      expect(response.body).toHaveProperty('endpoints');
+    });
   });
 
-  afterEach(async () => {
-    await app.close();
+  describe('GET /docs', () => {
+    it('should redirect to API documentation', async () => {
+      const response = await testSetup.request()
+        .get('/docs')
+        .expect(302);
+
+      expect(response.header.location).toBe('api/docs');
+    });
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toHaveProperty('name', 'Task Management API');
-        expect(res.body).toHaveProperty('version');
-        expect(res.body).toHaveProperty('description');
-      });
-  });
+  describe('GET /profile', () => {
+    it('should return user profile when authenticated', async () => {
+      const response = await testSetup.request()
+        .get('/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
 
-  it('/docs (GET) should redirect to Swagger docs', () => {
-    return request(app.getHttpServer())
-      .get('/docs')
-      .expect(302)
-      .expect('Location', 'api/docs');
+      expect(response.body).toHaveProperty('user');
+      expect(response.body.user).toHaveProperty('id', userId);
+      expect(response.body.user).toHaveProperty('username', 'appuser');
+      expect(response.body.user).toHaveProperty('role', UserRole.User);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      await testSetup.request()
+        .get('/profile')
+        .expect(401);
+    });
+
+    it('should return 401 with invalid token', async () => {
+      await testSetup.request()
+        .get('/profile')
+        .set('Authorization', 'Bearer invalid-token')
+        .expect(401);
+    });
   });
 });
