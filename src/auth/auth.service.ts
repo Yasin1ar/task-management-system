@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -9,6 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 /**
  * Authentication Service
@@ -55,46 +57,73 @@ export class AuthService {
       );
     }
 
-    // Check for existing user with the same email, phone number, or username
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: email || null },
-          { phoneNumber: phoneNumber || null },
-          { username },
-        ],
-      },
-    });
+    try {
+      // Check for existing user with the same email, phone number, or username
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: email || null },
+            { phoneNumber: phoneNumber || null },
+            { username },
+          ],
+        },
+      });
 
-    if (existingUser) {
-      if (existingUser.email === email) {
-        throw new BadRequestException('Email already in use');
+      if (existingUser) {
+        if (existingUser.email === email) {
+          throw new BadRequestException('Email already in use');
+        }
+        if (existingUser.phoneNumber === phoneNumber) {
+          throw new BadRequestException('Phone number already in use');
+        }
+        if (existingUser.username === username) {
+          throw new BadRequestException('Username already in use');
+        }
       }
-      if (existingUser.phoneNumber === phoneNumber) {
-        throw new BadRequestException('Phone number already in use');
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create the user
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          phoneNumber,
+          username,
+          password: hashedPassword,
+          firstName: registerDto.firstName,
+          lastName: registerDto.lastName,
+        },
+      });
+
+      // Return user data and token
+      return this.buildUserResponse(user);
+    } catch (error) {
+      // Handle Prisma unique constraint errors
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          const target = error.meta?.target as string[];
+          if (target.includes('email')) {
+            throw new BadRequestException('Email already in use');
+          }
+          if (target.includes('username')) {
+            throw new BadRequestException('Username already in use');
+          }
+          if (target.includes('phoneNumber')) {
+            throw new BadRequestException('Phone number already in use');
+          }
+        }
       }
-      if (existingUser.username === username) {
-        throw new BadRequestException('Username already in use');
+      
+      // If it's already a BadRequestException, just rethrow it
+      if (error instanceof BadRequestException) {
+        throw error;
       }
+      
+      // For any other errors, log and throw a generic error
+      console.error('Error during user registration:', error);
+      throw new InternalServerErrorException('An error occurred during registration');
     }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create the user
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        phoneNumber,
-        username,
-        password: hashedPassword,
-        firstName: registerDto.firstName,
-        lastName: registerDto.lastName,
-      },
-    });
-
-    // Return user data and token
-    return this.buildUserResponse(user);
   }
 
   async login(loginDto: LoginDto) {
