@@ -42,7 +42,7 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 - [x] Implement role assignment functionality
 - [x] Add validation and error handling
 - [x] Write tests for user management
-- [ ] final check before the next phase
+- [x] final check before the next phase
 
 ### 5. User Profile Module (phase 5)
 
