@@ -1,3 +1,4 @@
+
 import { Controller, Get, UseGuards, Redirect } from '@nestjs/common';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -17,19 +18,20 @@ export class AppController {
   }
 
   @Get('docs')
-  @Redirect('api/docs', 302)
   @ApiOperation({ summary: 'Redirect to API documentation' })
+  @Redirect('api/docs', 302)
   getDocs() {
+    // This method doesn't need a body as the @Redirect decorator
+    // handles the redirection
     return;
   }
 
-  @Get('protected')
   @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @ApiOperation({ summary: 'Get user profile' })
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Protected route example' })
-  getProtected(@CurrentUser() user: AuthenticatedUser) {
+  getProfile(@CurrentUser() user: AuthenticatedUser) {
     return {
-      message: 'This is a protected route',
       user: {
         id: user.id,
         username: user.username,
