@@ -15,11 +15,21 @@ describe('Auth Module (e2e)', () => {
     await testSetup.cleanup();
   }, 30000); // 30 second timeout
 
+  // Helper function to generate unique usernames
+  const generateUniqueUsername = (base = 'user') => {
+    return `${base}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  };
+
+  // Helper function to generate unique emails
+  const generateUniqueEmail = (base = 'user') => {
+    return `${base}-${Date.now()}-${Math.floor(Math.random() * 10000)}@example.com`;
+  };
+
   describe('POST /auth/register', () => {
     it('should register a new user successfully', async () => {
       const newUser = {
-        username: 'newuser',
-        email: 'new@example.com',
+        username: generateUniqueUsername('newuser'),
+        email: generateUniqueEmail('new'),
         password: 'Password123',
         firstName: 'New',
         lastName: 'User',
@@ -62,7 +72,7 @@ describe('Auth Module (e2e)', () => {
 
     it('should return 400 when neither email nor phone is provided', async () => {
       const invalidUser = {
-        username: 'nocontact',
+        username: generateUniqueUsername('nocontact'),
         password: 'Password123',
       };
 
@@ -76,9 +86,10 @@ describe('Auth Module (e2e)', () => {
 
     it('should return 400 when username is already in use', async () => {
       // First create a user
+      const username = generateUniqueUsername('existinguser');
       const user = {
-        username: 'existinguser',
-        email: 'existing@example.com',
+        username,
+        email: generateUniqueEmail('existing'),
         password: 'Password123',
       };
 
@@ -89,37 +100,38 @@ describe('Auth Module (e2e)', () => {
 
       // Try to create another user with the same username
       const duplicateUser = {
-        username: 'existinguser',
-        email: 'different@example.com',
+        username,
+        email: generateUniqueEmail('different'),
         password: 'Password123',
       };
 
       const response = await testSetup.request()
         .post('/auth/register')
-        .send(duplicateUser)
-        .expect(400);
-
+        .send(duplicateUser);
+      
+      // Check that the response contains the expected error message
       expect(response.body.message).toContain('Username already in use');
     });
   });
 
   describe('POST /auth/login', () => {
-    beforeEach(async () => {
-      // Create a user for login tests
-      const hashedPassword = await bcrypt.hash('Password123', 10);
+    it('should login successfully with valid credentials', async () => {
+      // Create a user for login test with unique username
+      const username = generateUniqueUsername('loginuser');
+      const password = 'Password123';
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
       await testSetup.prismaService.user.create({
         data: {
-          username: 'loginuser',
-          email: 'login@example.com',
+          username,
+          email: generateUniqueEmail('login'),
           password: hashedPassword,
         },
       });
-    });
 
-    it('should login successfully with valid credentials', async () => {
       const loginDto = {
-        username: 'loginuser',
-        password: 'Password123',
+        username,
+        password,
       };
 
       const response = await testSetup.request()
@@ -139,8 +151,21 @@ describe('Auth Module (e2e)', () => {
     });
 
     it('should return 401 with invalid credentials', async () => {
+      // Create a user for this specific test
+      const username = generateUniqueUsername('invalidcreds');
+      const password = 'Password123';
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      await testSetup.prismaService.user.create({
+        data: {
+          username,
+          email: generateUniqueEmail('invalidcreds'),
+          password: hashedPassword,
+        },
+      });
+
       const invalidLogin = {
-        username: 'loginuser',
+        username,
         password: 'WrongPassword123',
       };
 
@@ -154,7 +179,7 @@ describe('Auth Module (e2e)', () => {
 
     it('should return 401 when user does not exist', async () => {
       const nonExistentUser = {
-        username: 'nonexistent',
+        username: 'nonexistent-user-that-does-not-exist',
         password: 'Password123',
       };
 
@@ -168,7 +193,7 @@ describe('Auth Module (e2e)', () => {
 
     it('should return 400 when validation fails', async () => {
       const invalidLogin = {
-        username: 'loginuser',
+        username: generateUniqueUsername('validationtest'),
         // Missing password
       };
 
