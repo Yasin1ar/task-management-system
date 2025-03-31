@@ -37,11 +37,11 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 
 ### 4. User Management Module (phase 4)
 
-- [ ] Implement admin-only user management APIs
-- [ ] Create user CRUD operations
-- [ ] Implement role assignment functionality
-- [ ] Add validation and error handling
-- [ ] Write tests for user management
+- [x] Implement admin-only user management APIs
+- [x] Create user CRUD operations
+- [x] Implement role assignment functionality
+- [x] Add validation and error handling
+- [x] Write tests for user management
 - [ ] final check before the next phase
 
 ### 5. User Profile Module (phase 5)
