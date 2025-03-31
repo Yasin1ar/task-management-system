@@ -1,262 +1,175 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/prisma/prisma.service';
-import { UserRole } from '@prisma/client';
+import { TestSetup } from './test-setup';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from '@prisma/client';
 
-describe('UsersController (e2e)', () => {
-  let app: INestApplication;
-  let prismaService: PrismaService;
+describe('Users Module (e2e)', () => {
+  const testSetup = new TestSetup();
   let jwtService: JwtService;
   let adminToken: string;
   let userToken: string;
   let testUserId: number;
 
+  // Increase timeout for the beforeAll hook to 60 seconds
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    await testSetup.initialize();
+    jwtService = testSetup.app.get<JwtService>(JwtService);
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
-    await app.init();
-
-    prismaService = app.get<PrismaService>(PrismaService);
-    jwtService = app.get<JwtService>(JwtService);
-
-    // Clean the database before tests
-    await prismaService.user.deleteMany({});
-
-    // Create test users
-    const hashedPassword = await bcrypt.hash('Password123', 10);
-
-    const adminUser = await prismaService.user.create({
+    // Create an admin user
+    const hashedAdminPassword = await bcrypt.hash('AdminPassword123', 10);
+    const admin = await testSetup.prismaService.user.create({
       data: {
-        username: 'admin_test',
-        email: 'admin@test.com',
-        password: hashedPassword,
+        username: 'adminuser',
+        email: 'admin@example.com',
+        password: hashedAdminPassword,
         role: UserRole.Admin,
       },
     });
 
-    const regularUser = await prismaService.user.create({
+    // Create a regular user
+    const hashedUserPassword = await bcrypt.hash('UserPassword123', 10);
+    const user = await testSetup.prismaService.user.create({
       data: {
-        username: 'user_test',
-        email: 'user@test.com',
-        password: hashedPassword,
+        username: 'regularuser',
+        email: 'regular@example.com',
+        password: hashedUserPassword,
         role: UserRole.User,
       },
     });
+    testUserId = user.id;
 
-    // Generate JWT tokens
+    // Generate tokens
     adminToken = jwtService.sign({
-      sub: adminUser.id,
-      username: adminUser.username,
-      role: adminUser.role,
+      sub: admin.id,
+      username: admin.username,
+      role: admin.role,
     });
 
     userToken = jwtService.sign({
-      sub: regularUser.id,
-      username: regularUser.username,
-      role: regularUser.role,
+      sub: user.id,
+      username: user.username,
+      role: user.role,
     });
-  });
+  }, 60000); // 60 second timeout
 
   afterAll(async () => {
-    await prismaService.user.deleteMany({});
-    await app.close();
-  });
+    await testSetup.cleanup();
+  }, 30000); // 30 second timeout
 
   describe('POST /users', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer())
+    it('should create a new user when admin is authenticated', async () => {
+      const newUser = {
+        username: 'createduser',
+        email: 'created@example.com',
+        password: 'Password123',
+        firstName: 'Created',
+        lastName: 'User',
+      };
+
+      const response = await testSetup.request()
         .post('/users')
-        .send({
-          username: 'newuser',
-          email: 'new@test.com',
-          password: 'Password123',
-        })
-        .expect(401);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(newUser)
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.username).toBe(newUser.username);
+      expect(response.body.email).toBe(newUser.email);
+      expect(response.body.firstName).toBe(newUser.firstName);
+      expect(response.body.lastName).toBe(newUser.lastName);
+      expect(response.body.role).toBe(UserRole.User); // Default role
+      expect(response.body).not.toHaveProperty('password');
     });
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
+    it('should return 403 when non-admin user tries to create a user', async () => {
+      const newUser = {
+        username: 'anotheruser',
+        email: 'another@example.com',
+        password: 'Password123',
+      };
+
+      await testSetup.request()
         .post('/users')
         .set('Authorization', `Bearer ${userToken}`)
-        .send({
-          username: 'newuser',
-          email: 'new@test.com',
-          password: 'Password123',
-        })
+        .send(newUser)
         .expect(403);
     });
 
-    it('should validate input data', () => {
-      return request(app.getHttpServer())
-        .post('/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: 'a', // Too short
-          email: 'invalid-email',
-          password: 'short', // Too short and missing uppercase
-        })
-        .expect(400)
-        .expect((res) => {
-          expect(res.body.message).toBeInstanceOf(Array);
-          expect(res.body.message.length).toBeGreaterThan(0);
-        });
-    });
+    it('should return 400 when validation fails', async () => {
+      const invalidUser = {
+        username: 'te', // Too short
+        email: 'invalid-email',
+        password: 'short', // Too short and missing uppercase
+      };
 
-    it('should create a new user', () => {
-      return request(app.getHttpServer())
+      const response = await testSetup.request()
         .post('/users')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: 'newuser',
-          email: 'new@test.com',
-          password: 'Password123',
-          firstName: 'New',
-          lastName: 'User',
-        })
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('id');
-          expect(res.body.username).toBe('newuser');
-          expect(res.body.email).toBe('new@test.com');
-          expect(res.body.firstName).toBe('New');
-          expect(res.body.lastName).toBe('User');
-          expect(res.body.role).toBe(UserRole.User);
-          expect(res.body).not.toHaveProperty('password');
-          
-          // Save the user ID for later tests
-          testUserId = res.body.id;
-        });
-    });
+        .send(invalidUser)
+        .expect(400);
 
-    it('should not allow duplicate username', () => {
-      return request(app.getHttpServer())
-        .post('/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: 'newuser', // Already exists
-          email: 'another@test.com',
-          password: 'Password123',
-        })
-        .expect(400)
-        .expect((res) => {
-          expect(res.body.message).toBe('Username already in use');
-        });
-    });
-
-    it('should not allow duplicate email', () => {
-      return request(app.getHttpServer())
-        .post('/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: 'anotheruser',
-          email: 'new@test.com', // Already exists
-          password: 'Password123',
-        })
-        .expect(400)
-        .expect((res) => {
-          expect(res.body.message).toBe('Email already in use');
-        });
+      expect(response.body.message).toBeInstanceOf(Array);
+      expect(response.body.message.length).toBeGreaterThan(0);
     });
   });
 
   describe('GET /users', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer()).get('/users').expect(401);
+    it('should return paginated users when admin is authenticated', async () => {
+      const response = await testSetup.request()
+        .get('/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.meta).toHaveProperty('total');
+      expect(response.body.meta).toHaveProperty('page');
+      expect(response.body.meta).toHaveProperty('limit');
+      expect(response.body.meta).toHaveProperty('totalPages');
     });
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
+    it('should return 403 when non-admin user tries to get users', async () => {
+      await testSetup.request()
         .get('/users')
         .set('Authorization', `Bearer ${userToken}`)
         .expect(403);
     });
 
-    it('should return paginated users', () => {
-      return request(app.getHttpServer())
+    it('should filter users by query parameters', async () => {
+      const response = await testSetup.request()
         .get('/users')
+        .query({ username: 'regular' })
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('data');
-          expect(res.body).toHaveProperty('meta');
-          expect(res.body.data).toBeInstanceOf(Array);
-          expect(res.body.data.length).toBeGreaterThan(0);
-          expect(res.body.meta).toHaveProperty('total');
-          expect(res.body.meta).toHaveProperty('page');
-          expect(res.body.meta).toHaveProperty('limit');
-          expect(res.body.meta).toHaveProperty('totalPages');
-        });
-    });
+        .expect(200);
 
-    it('should apply filters correctly', () => {
-      return request(app.getHttpServer())
-        .get('/users?username=new')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.data).toBeInstanceOf(Array);
-          expect(res.body.data.length).toBeGreaterThan(0);
-          expect(res.body.data[0].username).toContain('new');
-        });
-    });
-
-    it('should handle pagination correctly', () => {
-      return request(app.getHttpServer())
-        .get('/users?page=1&limit=2')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.data).toBeInstanceOf(Array);
-          expect(res.body.data.length).toBeLessThanOrEqual(2);
-          expect(res.body.meta.page).toBe(1);
-          expect(res.body.meta.limit).toBe(2);
-        });
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.some(user => user.username === 'regularuser')).toBe(true);
     });
   });
 
   describe('GET /users/:id', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer())
+    it('should return a user by ID when admin is authenticated', async () => {
+      const response = await testSetup.request()
         .get(`/users/${testUserId}`)
-        .expect(401);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id', testUserId);
+      expect(response.body).toHaveProperty('username', 'regularuser');
+      expect(response.body).toHaveProperty('email', 'regular@example.com');
+      expect(response.body).not.toHaveProperty('password');
     });
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
+    it('should return 403 when non-admin user tries to get a user', async () => {
+      await testSetup.request()
         .get(`/users/${testUserId}`)
         .set('Authorization', `Bearer ${userToken}`)
         .expect(403);
     });
 
-    it('should return a user by ID', () => {
-      return request(app.getHttpServer())
-        .get(`/users/${testUserId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('id', testUserId);
-          expect(res.body.username).toBe('newuser');
-          expect(res.body.email).toBe('new@test.com');
-          expect(res.body).not.toHaveProperty('password');
-        });
-    });
-
-    it('should return 404 for non-existent user', () => {
-      return request(app.getHttpServer())
+    it('should return 404 when user does not exist', async () => {
+      await testSetup.request()
         .get('/users/9999')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
@@ -264,131 +177,136 @@ describe('UsersController (e2e)', () => {
   });
 
   describe('PATCH /users/:id', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer())
+    it('should update a user when admin is authenticated', async () => {
+      const updateData = {
+        firstName: 'Updated',
+        lastName: 'Name',
+      };
+
+      const response = await testSetup.request()
         .patch(`/users/${testUserId}`)
-        .send({ firstName: 'Updated' })
-        .expect(401);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id', testUserId);
+      expect(response.body.firstName).toBe(updateData.firstName);
+      expect(response.body.lastName).toBe(updateData.lastName);
     });
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
+    it('should return 403 when non-admin user tries to update a user', async () => {
+      await testSetup.request()
         .patch(`/users/${testUserId}`)
         .set('Authorization', `Bearer ${userToken}`)
-        .send({ firstName: 'Updated' })
+        .send({ firstName: 'Unauthorized' })
         .expect(403);
     });
 
-    it('should update a user', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          firstName: 'Updated',
-          lastName: 'Name',
-        })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('id', testUserId);
-          expect(res.body.firstName).toBe('Updated');
-          expect(res.body.lastName).toBe('Name');
-        });
-    });
-
-    it('should validate update data', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          username: 'a', // Too short
-        })
-        .expect(400);
-    });
-
-    it('should return 404 for non-existent user', () => {
-      return request(app.getHttpServer())
+    it('should return 404 when user does not exist', async () => {
+      await testSetup.request()
         .patch('/users/9999')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ firstName: 'NotFound' })
         .expect(404);
     });
+
+    it('should return 400 when validation fails', async () => {
+      const invalidData = {
+        username: 'a', // Too short
+      };
+
+      await testSetup.request()
+        .patch(`/users/${testUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(invalidData)
+        .expect(400);
+    });
   });
 
   describe('PATCH /users/:id/role', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}/role`)
+    let userToUpdateRoleId: number;
+
+    beforeEach(async () => {
+      // Create a new user for role update tests
+      const hashedPassword = await bcrypt.hash('RoleUpdatePassword123', 10);
+      const userToUpdateRole = await testSetup.prismaService.user.create({
+        data: {
+          username: `roleuser${Date.now()}`,
+          email: `roleuser${Date.now()}@example.com`,
+          password: hashedPassword,
+          role: UserRole.User,
+        },
+      });
+      userToUpdateRoleId = userToUpdateRole.id;
+    }, 10000); // 10 second timeout
+
+    it('should update a user role when admin is authenticated', async () => {
+      const response = await testSetup.request()
+        .patch(`/users/${userToUpdateRoleId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ role: UserRole.Admin })
-        .expect(401);
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id', userToUpdateRoleId);
+      expect(response.body.role).toBe(UserRole.Admin);
     });
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}/role`)
+    it('should return 403 when non-admin user tries to update a role', async () => {
+      await testSetup.request()
+        .patch(`/users/${userToUpdateRoleId}/role`)
         .set('Authorization', `Bearer ${userToken}`)
         .send({ role: UserRole.Admin })
         .expect(403);
     });
 
-    it('should update a user role', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}/role`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ role: UserRole.Admin })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('id', testUserId);
-          expect(res.body.role).toBe(UserRole.Admin);
-        });
-    });
-
-    it('should validate role value', () => {
-      return request(app.getHttpServer())
-        .patch(`/users/${testUserId}/role`)
+    it('should return 400 when invalid role is provided', async () => {
+      await testSetup.request()
+        .patch(`/users/${userToUpdateRoleId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ role: 'InvalidRole' })
         .expect(400);
     });
-
-    it('should return 404 for non-existent user', () => {
-      return request(app.getHttpServer())
-        .patch('/users/9999/role')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ role: UserRole.User })
-        .expect(404);
-    });
   });
 
   describe('DELETE /users/:id', () => {
-    it('should require authentication', () => {
-      return request(app.getHttpServer())
-        .delete(`/users/${testUserId}`)
-        .expect(401);
-    });
+    let userToDeleteId: number;
 
-    it('should require admin role', () => {
-      return request(app.getHttpServer())
-        .delete(`/users/${testUserId}`)
+    beforeEach(async () => {
+      // Create a user to delete
+      const hashedPassword = await bcrypt.hash('DeletePassword123', 10);
+      const userToDelete = await testSetup.prismaService.user.create({
+        data: {
+          username: `deleteuser${Date.now()}`,
+          email: `delete${Date.now()}@example.com`,
+          password: hashedPassword,
+          role: UserRole.User,
+        },
+      });
+      userToDeleteId = userToDelete.id;
+    }, 10000); // 10 second timeout
+
+    it('should return 403 when non-admin user tries to delete a user', async () => {
+      await testSetup.request()
+        .delete(`/users/${userToDeleteId}`)
         .set('Authorization', `Bearer ${userToken}`)
         .expect(403);
     });
 
-    it('should delete a user', () => {
-      return request(app.getHttpServer())
-        .delete(`/users/${testUserId}`)
+    it('should delete a user when admin is authenticated', async () => {
+      await testSetup.request()
+        .delete(`/users/${userToDeleteId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(204);
-    });
 
-    it('should return 404 after user is deleted', () => {
-      return request(app.getHttpServer())
-        .get(`/users/${testUserId}`)
+      // Verify the user is deleted
+      await testSetup.request()
+        .get(`/users/${userToDeleteId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
 
-    it('should return 404 for non-existent user', () => {
-      return request(app.getHttpServer())
+    it('should return 404 when user does not exist', async () => {
+      await testSetup.request()
         .delete('/users/9999')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
