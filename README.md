@@ -1,72 +1,191 @@
 # Task Management System
 
-I am building a Task Management System using NestJS (a TypeScript-based Node.js framework) with Prisma ORM and MySQL for data management. The system will allow users to create, update, and manage tasks with features like file attachments, pagination, sorting, and filtering. It will include a secure authentication system with JWT-based authentication and role-based authorization to control access to different modules. Admin users will have the ability to manage users and assign roles, while regular users can manage their own tasks and profiles. The project will follow best practices in code structure, testing, and documentation.
+A robust back-end system for managing tasks built with NestJS, MySQL, and Prisma ORM.
 
-## Project Plan
+## Overview
 
-### 1. Project Setup (phase 1)
+This Task Management System provides a complete solution for user authentication, profile management, task management, and user administration. The system follows best practices for security, code organization, and API design.
 
-- [x] Set up GitHub repository with proper README
-- [x] leverage gitflow
-- [x] Initialize NestJS project
-- [x] Include environment configuration management
-- [x] Set up Docker for MySQL 8.0
-- [x] Basic Prisma ORM configuration
-- [x] Set up Swagger for documentation
-- [x] install and configure ESLint + Prettier
-- [x] install husky for pre-commit hook
-- [x] Set up testing environment (Jest)
-- [x] final check before the next phase
+## Features
 
-### 2. Database Design (phase 2)
+### Authentication
 
-- [x] Design database schema (Users, Tasks)
-- [x] Create Prisma models
-- [x] Set up migrations
-- [x] Test database connections
-- [x] final check before the next phase
+- User registration with email, phone number, or username
+- Secure password validation (8+ characters with uppercase and lowercase)
+- JWT-based authentication
+- Role-based access control
 
-### 3. Authentication Module (phase 3)
+### User Management (Admin only)
 
-- [x] Implement user registration with validation
-- [x] Implement login functionality
-- [x] Set up JWT authentication
-- [x] Create role-based authorization
-- [x] Write tests for authentication flows
-- [x] final check before the next phase
+- List all users with pagination, sorting, and filtering
+- Modify user data
+- Delete users (cascades to their tasks)
+- Assign roles (Admin or User)
 
-### 4. User Management Module (phase 4)
+### User Profile
 
-- [x] Implement admin-only user management APIs
-- [x] Create user CRUD operations
-- [x] Implement role assignment functionality
-- [x] Add validation and error handling
-- [x] Write tests for user management
-- [x] final check before the next phase
+- Update profile information
+- Upload profile pictures
+- View profile details
 
-### 5. User Profile Module (phase 5)
+### Task Management
 
-- [x] Implement profile update functionality
-- [x] Add profile picture upload with file storage
-- [x] Create profile retrieval endpoint
-- [x] Write tests for profile management
-- [x] final check before the next phase
+- Create, read, update, and delete tasks
+- File attachments for tasks
+- Pagination, sorting, and filtering for task lists
+- User-specific task access control
 
-### 6. Task Management Module (phase 6)
+## Tech Stack
 
-- [x] Implement task CRUD operations
-- [x] Add file attachment functionality
-- [x] Implement pagination for task listing
-- [x] Add sorting and filtering (bonus)
-- [x] Ensure proper user access control
-- [x] Write tests for task management
-- [x] final check before the next phase
+- **Framework**: NestJS
+- **Database**: MySQL 8.0 (Docker)
+- **ORM**: Prisma
+- **Authentication**: JWT
+- **Documentation**: Swagger
+- **Testing**: Jest
+- **Code Quality**: ESLint, Prettier, Husky
 
-### 7. Documentation & Finalization (phase 7)
+## Getting Started
 
-- [x] Complete Swagger documentation
-- [x] Finalize README with setup instructions
-- [x] Review code for best practices and clean code
-- [x] Ensure all tests are passing
-- [x] Final testing and bug fixes
-- [x] final check before the next phase
+### Prerequisites
+
+- Node.js (v16+)
+- Docker and Docker Compose
+- Git
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yasin1ar/task-management-system.git
+   cd task-management-system
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit the `.env` file with your configuration.
+
+4. Start the MySQL database in docker container:
+
+   ```bash
+   docker run --name mysql_db -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=task_db -p 3306:3306 -d mysql:8.0
+
+   ```
+   Note: -e MYSQL_ROOT_PASSWORD= -e MYSQL_DATABASE= must be in coordinate with DATABASE_URL defined in `.env`.
+5. Run database migrations:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+6. Start the application:
+
+   ```bash
+   npm run start:dev
+   ```
+
+### Running Tests
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+## API Documentation
+
+Once the application is running, you can access the Swagger documentation at:
+
+```
+http://localhost:3000/api/docs
+```
+
+### Main API Endpoints
+
+#### Authentication
+
+- `POST /auth/register` - Register a new user
+- `POST /auth/login` - Login and get JWT token
+
+#### User Management (Admin only)
+
+- `GET /users` - Get all users
+- `GET /users/:id` - Get user by ID
+- `PATCH /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
+- `PATCH /users/:id/role` - Update user role
+
+#### User Profile
+
+- `GET /profile` - Get current user profile
+- `PATCH /profile` - Update profile
+- `POST /profile/upload` - Upload profile picture
+
+#### Task Management
+
+- `GET /tasks` - Get all tasks for current user
+- `POST /tasks` - Create a new task
+- `GET /tasks/:id` - Get task by ID
+- `PATCH /tasks/:id` - Update task
+- `DELETE /tasks/:id` - Delete task
+- `POST /tasks/:id/attachment` - Upload task attachment
+- `GET /tasks/:id/attachment` - Download task attachment
+
+## Project Structure
+
+```
+.
+├── prisma/                  # Prisma schema and migrations
+├── src/
+│   ├── auth/                # Authentication module
+│   ├── users/               # User management module
+│   ├── profile/             # User profile module
+│   ├── tasks/               # Task management module
+│   ├── prisma/              # Prisma service
+│   ├── app.module.ts        # Main application module
+│   └── main.ts              # Application entry point
+├── test/                    # E2E tests
+├── uploads/                 # Uploaded files storage
+│   ├── profiles/            # Profile pictures
+│   └── attachments/         # Task attachments
+└── scripts/                 # Utility scripts
+```
+
+## Development Guidelines
+
+### Git Workflow
+
+This project follows the Gitflow workflow:
+
+- `main` branch contains production code
+- `develop` branch is the integration branch
+- Feature branches are created from `develop`
+- Use pull requests for code reviews
+
+### Coding Standards
+
+- Follow NestJS best practices
+- Use TypeScript features appropriately
+- Write unit and integration tests for new features
+- Document APIs with Swagger annotations
+- Format code with Prettier before committing
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
