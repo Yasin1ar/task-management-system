@@ -1,7 +1,7 @@
 .qodo
 users.README.md
 project-statement.md
-uploads/profiles
+uploads/
 # compiled output
 /dist
 /node_modules

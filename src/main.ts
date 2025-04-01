@@ -18,14 +18,23 @@ async function bootstrap() {
     }
   }
 
-  // Ensure uploads directory exists
-  const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+  // Ensure uploads directories exist
+  const uploadDirs = [
+    path.join(process.cwd(), 'uploads', 'profiles'),
+    path.join(process.cwd(), 'uploads', 'attachments')
+  ];
+  
+  for (const dir of uploadDirs) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
   }
 
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // Enable CORS
+  app.enableCors();
 
   // Apply validation pipe globally
   app.useGlobalPipes(
@@ -38,11 +47,12 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Task Management API')
-    .setDescription('An API for interacting with task management system')
+    .setDescription('An API for managing tasks, users, and profiles')
     .setVersion('1.0')
-    .addTag('tasks')
+    .addTag('auth')
     .addTag('users')
     .addTag('profile')
+    .addTag('tasks')
     .addBearerAuth()
     .build();
 
