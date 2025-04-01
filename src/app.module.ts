@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ProfileModule } from './profile/profile.module';
     AuthModule,
     UsersModule,
     ProfileModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
