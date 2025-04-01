@@ -9,6 +9,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtStrategy } from '../strategies/jwt.strategy';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UnauthorizedException } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
+import { JwtPayload } from '../interfaces/auth.interfaces';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -45,14 +47,18 @@ describe('JwtStrategy', () => {
         firstName: 'Test',
         lastName: 'User',
         profilePicture: null,
-        role: 'User',
+        role: UserRole.User,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-      const payload = { sub: 1, username: 'testuser', role: 'User' };
+      const payload: JwtPayload = { 
+        sub: 1, 
+        username: 'testuser', 
+        role: UserRole.User 
+      };
       const result = await strategy.validate(payload);
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
@@ -66,7 +72,11 @@ describe('JwtStrategy', () => {
     it('should throw UnauthorizedException when user does not exist', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      const payload = { sub: 999, username: 'nonexistent', role: 'User' };
+      const payload: JwtPayload = { 
+        sub: 999, 
+        username: 'nonexistent', 
+        role: UserRole.User 
+      };
 
       await expect(strategy.validate(payload)).rejects.toThrow(
         UnauthorizedException,
