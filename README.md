@@ -54,19 +54,19 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 
 ### 6. Task Management Module (phase 6)
 
-- [ ] Implement task CRUD operations
-- [ ] Add file attachment functionality
-- [ ] Implement pagination for task listing
-- [ ] Add sorting and filtering (bonus)
-- [ ] Ensure proper user access control
-- [ ] Write tests for task management
-- [ ] final check before the next phase
+- [x] Implement task CRUD operations
+- [x] Add file attachment functionality
+- [x] Implement pagination for task listing
+- [x] Add sorting and filtering (bonus)
+- [x] Ensure proper user access control
+- [x] Write tests for task management
+- [x] final check before the next phase
 
 ### 7. Documentation & Finalization (phase 7)
 
-- [ ] Complete Swagger documentation
-- [ ] Finalize README with setup instructions
-- [ ] Review code for best practices and clean code
-- [ ] Ensure all tests are passing
-- [ ] Final testing and bug fixes
-- [ ] final check before the next phase
+- [x] Complete Swagger documentation
+- [x] Finalize README with setup instructions
+- [x] Review code for best practices and clean code
+- [x] Ensure all tests are passing
+- [x] Final testing and bug fixes
+- [x] final check before the next phase
