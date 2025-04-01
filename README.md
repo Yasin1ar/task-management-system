@@ -46,11 +46,11 @@ I am building a Task Management System using NestJS (a TypeScript-based Node.js 
 
 ### 5. User Profile Module (phase 5)
 
-- [ ] Implement profile update functionality
-- [ ] Add profile picture upload with file storage
-- [ ] Create profile retrieval endpoint
-- [ ] Write tests for profile management
-- [ ] final check before the next phase
+- [x] Implement profile update functionality
+- [x] Add profile picture upload with file storage
+- [x] Create profile retrieval endpoint
+- [x] Write tests for profile management
+- [x] final check before the next phase
 
 ### 6. Task Management Module (phase 6)
 

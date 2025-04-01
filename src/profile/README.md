@@ -21,17 +21,20 @@ The Profile Module allows users to manage their profile information and upload p
 The Profile Module requires the following setup:
 
 1. Ensure the uploads directory exists:
+
    ```bash
    mkdir -p uploads/profiles
    ```
 
 2. Install required dependencies:
+
    ```bash
    npm install @nestjs/platform-express @nestjs/serve-static multer uuid
    npm install -D @types/multer @types/uuid
    ```
 
 3. Make sure the uploads directory is served statically:
+
    ```typescript
    // In app.module.ts
    import { ServeStaticModule } from '@nestjs/serve-static';
