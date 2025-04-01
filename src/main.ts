@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
   // Load environment variables
@@ -14,6 +16,12 @@ async function bootstrap() {
     if (!process.env[envVar]) {
       throw new Error(`Environment variable ${envVar} is required`);
     }
+  }
+
+  // Ensure uploads directory exists
+  const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
   const logger = new Logger('Bootstrap');
@@ -34,6 +42,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('tasks')
     .addTag('users')
+    .addTag('profile')
     .addBearerAuth()
     .build();
 
