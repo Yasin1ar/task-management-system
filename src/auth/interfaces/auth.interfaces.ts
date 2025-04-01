@@ -3,23 +3,44 @@
  *
  * This file contains interfaces used across the authentication module.
  */
-import { User, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { Request } from 'express';
 
 /**
- * Represents an authenticated user without the password field
+ * Represents an authenticated user in the system
+ * This interface is used for the user object attached to requests
+ * after successful authentication
  */
-export type AuthenticatedUser = Omit<User, 'password'>;
+export interface AuthenticatedUser {
+  id: number;
+  username: string;
+  email: string | null;
+  phoneNumber: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profilePicture: string | null;
+  role: UserRole;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * JWT payload structure
  */
 export interface JwtPayload {
-  sub: number;
+  sub: number; // User ID
   username: string;
   role: UserRole;
-  iat?: number;
-  exp?: number;
+  iat?: number; // Issued at timestamp
+  exp?: number; // Expiration timestamp
+}
+
+/**
+ * Response returned after successful authentication
+ */
+export interface AuthResponse {
+  user: AuthenticatedUser;
+  token: string;
 }
 
 /**
