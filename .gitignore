@@ -64,3 +64,4 @@ test/README.md
 .dockerignore
 docker-compose.yml
 docker-README.md
+dockerfile

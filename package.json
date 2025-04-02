@@ -22,8 +22,7 @@
     "test:e2e:watch": "jest --config ./test/jest-e2e.json --watch",
     "test:e2e:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config ./test/jest-e2e.json",
     "setup:test-db": "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss",
-    "prepare": "husky install",
-    "test:db": "ts-node prisma/test-db-connection.ts"
+    "prepare": "husky install"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

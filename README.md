@@ -49,8 +49,8 @@ This Task Management System provides a complete solution for user authentication
 
 ### Prerequisites
 
-- Node.js (v16+)
-- Docker and Docker Compose
+- Node.js (v20+)
+- Docker(optional, for mysql)
 - Git
 
 ### Installation
@@ -82,7 +82,9 @@ This Task Management System provides a complete solution for user authentication
    docker run --name mysql_db -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=task_db -p 3306:3306 -d mysql:8.0
 
    ```
+
    Note: -e MYSQL_ROOT_PASSWORD= -e MYSQL_DATABASE= must be in coordinate with DATABASE_URL defined in `.env`.
+
 5. Run database migrations:
 
    ```bash
@@ -95,17 +97,79 @@ This Task Management System provides a complete solution for user authentication
    npm run start:dev
    ```
 
+## Running Tests
+
+### Setup
+
+1. **Create the test database**
+
+   First, create a test database in MySQL:
+
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS task_db_test;"
+   ```
+
+   Then, push the Prisma schema to the test database:
+
+   ```bash
+   npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
+   ```
+
+2. **Verify the test environment**
+
+   Check that the `.env.test` file exists in the root directory and contains:
+
+   ```
+   DATABASE_URL="mysql://root:root@localhost:3306/task_db_test"
+   JWT_SECRET="test_secret_key"
+   PORT=3001
+   ```
+
+   Adjust the database connection string as needed for your environment.
+
 ### Running Tests
+
+Run the E2E tests with:
+
+```bash
+npm run test:e2e
+```
+
+To run a specific test file:
+
+```bash
+npm run test:e2e -- users.e2e-spec.ts
+```
+
+To run tests in watch mode:
+
+```bash
+npm run test:e2e:watch
+```
+
+### Troubleshooting
+
+If tests are still using the main database:
+
+1. Check that the `.env.test` file is correctly configured
+2. Verify that the `DATABASE_URL` in `.env.test` points to the test database
+3. Check the console output for which database is being used - it should show "Using test database: mysql://root:root@localhost:3306/task_db_test"
+4. Make sure you're using the `npm run test:e2e` command which sets `NODE_ENV=test`
+
+### How It Works
+
+The E2E tests use a separate database configuration to ensure they don't affect your development or production data. This is achieved through:
+
+1. A separate `.env.test` file with test-specific environment variables
+2. The `jest-env-setup.ts` file that loads these variables before tests run
+3. The `test-database.ts` file that creates a Prisma client specifically for the test database
+4. A safety check that verifies we're using a test database before running tests
+
+### Also Unit test
 
 ```bash
 # Unit tests
 npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
 ```
 
 ## API Documentation
@@ -162,9 +226,9 @@ http://localhost:3000/api/docs
 │   └── main.ts              # Application entry point
 ├── test/                    # E2E tests
 ├── uploads/                 # Uploaded files storage
-│   ├── profiles/            # Profile pictures
-│   └── attachments/         # Task attachments
-└── scripts/                 # Utility scripts
+    ├── profiles/            # Profile pictures
+    └── attachments/         # Task attachments
+
 ```
 
 ## Development Guidelines
